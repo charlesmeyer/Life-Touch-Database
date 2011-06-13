@@ -1,0 +1,432 @@
+<?php
+// $Id: og_defaults.module,v 1.1.2.5 2010/08/13 00:28:56 kaleworsley Exp $
+
+/**
+ * @file
+ * Set defaults for Organic group 'group' nodes.
+ *
+ * @author Kale Worsley kale@egressive.com
+ */
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function og_defaults_form_node_type_form_alter(&$form, &$form_state) {
+  array_unshift($form['#submit'], 'og_defaults_node_type_form_submit');
+  
+  // Built in content types do not allow changes to type machine name.
+  if (isset($form['identity']['type']['#default_value'])) {
+    $type = $form['identity']['type']['#default_value'];
+  }
+  else {
+    $type = $form['identity']['type']['#value'];
+  }
+
+  if (og_is_group_type($type)) {
+  
+    foreach (og_get_types('group_post') as $post_type) {
+      $group_post_types[$post_type] = node_get_types('name', $post_type);
+    }
+
+    $form['og']['og_defaults_settings'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Default Settings'),
+      '#access' => user_access('administer organic groups'),
+    );
+
+    // Membership requests
+    $form['og']['og_defaults_settings']['og_selective'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Membership requests'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+
+    $form['og']['og_defaults_settings']['og_selective']['og_selective'] = array(
+      '#type' => 'radios',
+      '#title' => t('Membership requests'),
+      '#required' => TRUE,
+      '#default_value' => variable_get('og_selective_'. $type, OG_OPEN),
+      '#options' => og_selective_map(),
+      '#description' => t('How should membership requests be handled in this group type? When you select <em>closed</em>, users will not be able to join <strong>or</strong> leave.')
+    );
+
+    $form['og']['og_defaults_settings']['og_selective']['og_selective_enforce'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enforce membership requests defaults'),
+      '#default_value' => variable_get('og_selective_enforce_'. $type, FALSE),
+      '#description' => t('Should this option be hidden from the node form?'),
+    );
+
+    // Register form
+    $form['og']['og_defaults_settings']['og_register'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Registration form'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+
+    $visibility = variable_get('og_visibility_registration', OG_REGISTRATION_CHOOSE_FALSE);
+
+    $default = FALSE;
+    switch ($visibility) {
+      case OG_REGISTRATION_CHOOSE_TRUE:
+        $default = TRUE;
+        // fall through
+      case OG_REGISTRATION_CHOOSE_FALSE:
+        $form['og']['og_defaults_settings']['og_register']['og_register'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Registration form'),
+          '#default_value' => variable_get('og_register_'. $type, $default),
+          '#description' => t('May users join this group type during registration? If checked, a corresponding checkbox will be added to the registration form.'),
+        );
+
+        $form['og']['og_defaults_settings']['og_register']['og_register_enforce'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Enforce registration form defaults'),
+          '#default_value' => variable_get('og_register_enforce_'. $type, FALSE),
+          '#description' => t('Should this option be hidden from the node form?'),
+        );
+        break;
+    }
+
+
+    // List in groups directory
+    $form['og']['og_defaults_settings']['og_directory'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('List in groups directory'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+
+    $visibility = variable_get('og_visibility_directory', OG_DIRECTORY_CHOOSE_TRUE);
+
+    $default = FALSE;
+    switch ($visibility) {
+      case OG_DIRECTORY_CHOOSE_TRUE:
+        $default = TRUE;
+        // fall through
+      case OG_DIRECTORY_CHOOSE_FALSE:
+        $form['og']['og_defaults_settings']['og_directory']['og_directory'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('List in groups directory'),
+          '#default_value' => variable_get('og_directory_'. $type, $default),
+          '#description' => t('Should this group type appear on the <a href="@url">list of groups page</a> (requires OG Views module)? Disabled if the group is set to <em>private group</em>.', array('@url' => url('og')))
+        );
+
+        $form['og']['og_defaults_settings']['og_directory']['og_directory_enforce'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Enforce list in groups directory defaults'),
+          '#default_value' => variable_get('og_directory_enforce_'. $type, FALSE),
+          '#description' => t('Should this option be hidden from the node form?'),
+        );
+        break;
+    }
+
+    // Theme settings
+    if ($theme_form = system_theme_select_form(t('Selecting a different theme will change the look and feel of the group.'), variable_get('theme_default', 'garland'), 2)) {
+      $form['og']['og_defaults_settings']['og_theme'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Theme settings'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE
+      );
+
+      $theme_form['themes']['theme']['#default_value'] = variable_get('og_theme_'. $type, '');
+      unset($theme_form['themes']['#collapsible']);
+      $form['og']['og_defaults_settings']['og_theme'] += $theme_form;
+      $form['og']['og_defaults_settings']['og_theme']['og_theme_enforce'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enforce theme defaults'),
+        '#default_value' => variable_get('og_theme_enforce_'. $type, FALSE),
+        '#description' => t('Should this option be hidden from the node form?'),
+      );
+    }
+
+    // Audience checkboxes    
+    $form['og']['og_defaults_settings']['og_audience'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Audience checkboxes'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+
+    $form['og']['og_defaults_settings']['og_audience']['og_audience'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Audience checkboxes'),
+      '#options' => $group_post_types,
+      '#default_value' => variable_get('og_audience_'. $type, array()),
+      '#description' => t('Select group post forms for which the Audience checkboxes shall be <strong>invisible</strong>.'),
+    );
+
+    // Description
+    $form['og']['og_defaults_settings']['og_description'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Description'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+
+    $form['og']['og_defaults_settings']['og_description']['og_description'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Description'),
+      '#default_value' => variable_get('og_description_'. $type, ''),
+      '#description' => t('Provide a default description for this group.')
+    );
+
+    $form['og']['og_defaults_settings']['og_description']['og_description_enforce'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enforce description default'),
+      '#default_value' => variable_get('og_description_enforce_'. $type, FALSE),
+      '#description' => t('Should this option be hidden from the node form?')
+    );
+
+    $form['og']['og_defaults_settings']['og_description']['og_description_optional'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Optional description'),
+      '#default_value' => variable_get('og_description_optional_'. $type, FALSE),
+      '#description' => t('Should the description field be optional? Not applicable if the description is enforced.')
+    );
+
+    // Group language
+    if (module_exists('locale') && $languages = locale_language_list()) {
+      if (count($languages) > 1) {
+        $form['og']['og_defaults_settings']['og_language'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Group language'),
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE
+        );
+
+        $form['og']['og_defaults_settings']['og_language']['og_language'] = array(
+          '#type' => 'radios',
+          '#title' => t('Group language'),
+          '#default_value' => variable_get('og_language_'. $type, ''),
+          '#options' => array('' => t('Language neutral')) + $languages,
+          '#description' => t('Selecting a different locale will change the interface language for all group pages and emails. Users who have chosen a preferred language always see their chosen language.'),
+        );
+
+        $form['og']['og_defaults_settings']['og_language']['og_language_enforce'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Enforce group language defaults'),
+          '#default_value' => variable_get('og_language_enforce_'. $type, FALSE),
+          '#description' => t('Should this option be hidden from the node form?'),
+        );
+      }
+    }
+
+    // Menu    
+    if (module_exists('og_menu')) {
+      $form['og']['og_defaults_settings']['og_menu'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Menu'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE
+      );
+
+      $form['og']['og_defaults_settings']['og_menu']['og_menu'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enable menu for this group'),
+        '#default_value' => variable_get('og_menu_'. $type, FALSE),
+        '#description' => t('Check to create a menu for this group. Uncheck to delete the menu of this group.')
+      );
+
+      $form['og']['og_defaults_settings']['og_menu']['og_menu_enforce'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enforce menu default'),
+        '#default_value' => variable_get('og_menu_enforce_'. $type, FALSE),
+        '#description' => t('Should this option be hidden from the node form?')
+      );
+    }
+
+    // Private group
+    if (module_exists('og_access')) {
+      $form['og']['og_defaults_settings']['og_private'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Private group'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE
+      );
+
+      $visibility = variable_get('og_private_groups', OG_PRIVATE_GROUPS_CHOOSE_FALSE);
+      $default = FALSE;
+      switch ($visibility) {
+        case OG_PRIVATE_GROUPS_CHOOSE_TRUE :
+          $default = TRUE;
+          // fall through
+        case OG_PRIVATE_GROUPS_CHOOSE_FALSE :
+          $form['og']['og_defaults_settings']['og_private']['og_private'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Private group'),
+            '#default_value' => variable_get('og_private_'. $type, $default),
+            '#description' => t('Should this group type be visible only to its members?')
+          );
+
+          $form['og']['og_defaults_settings']['og_private']['og_private_enforce'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Enforce private group defaults'),
+            '#default_value' => variable_get('og_private_enforce_'. $type, FALSE),
+            '#description' => t('Should this option be hidden from the node form?'),
+          );
+          break;
+      }
+    }
+  }
+}
+/**
+ * Sumbit handler for node type forms
+ */
+function og_defaults_node_type_form_submit($form, &$form_state) {
+  $theme = $form_state['values']['theme'];
+  unset($form_state['values']['theme']);
+  $form_state['values']['og_theme'] = $theme;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function og_defaults_form_alter(&$form, &$form_state, $form_id) {
+  // Node forms
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    // Group nodes
+    if (og_is_group_type($node->type)) {
+
+      //OG Selective
+      $og_selective = variable_get('og_selective_'. $node->type, OG_OPEN);
+      //OG Register
+      $og_register = variable_get('og_register_'. $node->type, variable_get('og_visibility_registration', OG_REGISTRATION_CHOOSE_FALSE));
+      //OG Directory
+      $og_directory = variable_get('og_directory_'. $node->type, variable_get('og_visibility_directory', OG_DIRECTORY_CHOOSE_TRUE));
+      //OG Theme
+      $og_theme = variable_get('og_theme_'. $node->type, variable_get('theme_default', 'garland'));
+      //OG Description
+      $og_description = variable_get('og_description_'. $node->type, '');
+
+      if (module_exists('og_access')) {
+        //OG Private
+        $og_private = variable_get('og_private_'. $node->type, variable_get('og_private_groups', OG_PRIVATE_GROUPS_CHOOSE_FALSE));
+      }
+
+      if (module_exists('locale')) {
+        //OG Language
+        $og_language = variable_get('og_language_'. $node->type, '');
+      }
+
+      if (module_exists('og_menu')) {
+        // OG Menu
+        $og_menu = variable_get('og_menu_'. $node->type, '');
+      }
+
+      if (variable_get('og_selective_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+        $form['og_selective']['#type'] = 'value';
+        $form['og_selective']['#value'] = $og_selective;
+      }
+      else {
+        $form['og_selective']['#default_value'] = ($node->og_selective) ? $node->og_selective : $og_selective;
+      }
+
+      if (variable_get('og_register_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+        $form['og_register']['#type'] = 'value';
+        $form['og_register']['#value'] = $og_register;
+      }
+      else {
+        $form['og_register']['#default_value'] = ($node->og_register) ? $node->og_register : $og_register;
+      }
+
+      if (variable_get('og_directory_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+        $form['og_directory']['#type'] = 'value';
+        $form['og_directory']['#value'] = $og_directory;
+      }
+      else {
+        $form['og_directory']['#default_value'] = ($node->og_directory) ? $node->og_directory : $og_directory;
+      }
+
+      if (variable_get('og_theme_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+        unset($form['themes']);
+        $form['theme'] = array(
+          '#type' => 'value',
+          '#value' => $og_theme,
+        );
+      }
+      else {
+        $form['themes']['theme']['#default_value'] = ($node->og_theme) ? $node->og_theme : $og_theme;
+      }
+
+      if (variable_get('og_description_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+        $form['og_description']['#type'] = 'value';
+        $form['og_description']['#value'] = $og_description;
+      }
+      else {
+        if (user_access('administer organic groups') || variable_get('og_description_optional_'. $node->type, FALSE)) {
+          $form['og_description']['#required'] = FALSE;
+        }
+        $form['og_description']['#default_value'] = ($node->og_description) ? $node->og_description : $og_description;
+      }
+
+      if (module_exists('locale')) {
+        if (variable_get('og_language_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+          $form['og_language']['#type'] = 'value';
+          $form['og_language']['#value'] = $og_language;
+        }
+        else {
+          $form['og_language']['#default_value'] = ($node->og_language) ? $node->og_language : $og_language;
+        }
+      }
+
+      if (module_exists('og_menu')) {
+        if (variable_get('og_menu_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+          $form['og_menu']['#type'] = 'value';
+          $form['og_menu']['#value'] = $og_menu;
+        }
+        else {
+          $form['og_menu']['#default_value'] = ($node->og_menu) ? $node->og_menu : $og_menu;
+        }
+      }
+
+      if (module_exists('og_access')) {
+        if (variable_get('og_private_enforce_'. $node->type, FALSE) && !user_access('administer organic groups')) {
+          $form['og_private']['#type'] = 'value';
+          $form['og_private']['#value'] = $og_private;
+        }
+        else {
+          $form['og_private']['#default_value'] = ($node->og_private) ? $node->og_private : $og_private;
+        }
+      }
+    }
+    
+    // Post nodes
+    if (og_is_group_post_type($node->type)) {
+      $group = og_determine_context();
+      if (in_array($node->type, array_filter(variable_get('og_audience_'. $group->type, array())))) {
+
+        $form['og_nodeapi']['visible']['og_groups_visible'] = array(
+          '#type' => 'item', 
+          '#title' => t('Audience'), 
+          '#value' => $group->title,
+        );
+
+        $form['og_nodeapi']['invisible']['og_groups'] = array(
+          '#type' => 'value',
+          '#value' => array($group->nid),
+        );
+
+        $form['#submit'][] = 'og_defaults_group_post_form_submit';
+
+        unset($form['og_nodeapi']['visible']['og_groups']);
+      }
+    }
+  }
+}
+
+
+/**
+ * Submit handler for og_defaults_form_alter(). It sets the value of the og_groups parameter to the current organic group context.
+ */
+function og_defaults_group_post_form_submit($form, &$form_state) {
+  $group = og_determine_context();
+  if (in_array($node->type, array_filter(variable_get('og_audience_'. $group->type, array())))) {
+    unset($form_state['values']['og_groups']);
+    $form_state['values']['og_groups'] = array($group->nid);
+  }
+}

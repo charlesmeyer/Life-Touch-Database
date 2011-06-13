@@ -1,0 +1,285 @@
+# $Id: userplus.pot,v 1.1.2.1 2009/11/17 23:06:41 marcp Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  userplus.module,v 1.8.2.10 2009/09/03 22:06:44 marcp
+#  userplus_actions.module,v 1.1.2.1 2009/09/03 22:08:02 marcp
+#  userplus.info,v 1.2.2.3 2009/03/17 18:10:41 marcp
+#  userplus_actions.info,v 1.1.2.1 2009/09/03 22:08:02 marcp
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2009-11-17 16:02-0700\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: userplus.module:16
+msgid "<p>This web page allows you to register new users and assign their roles.  Note that you may not have a user where either the e-mail address or the username match another user in the system. Leave any surplus rows blank if you are only adding a few users.</p><p>It may take several runs through this page if you need to add a lot of users, however you may change the number of rows that appear on this page on the !settings page.</p>"
+msgstr ""
+
+#: userplus.module:16;18
+msgid "userplus settings"
+msgstr ""
+
+#: userplus.module:18
+msgid "<p>This web page allows you to set role membership for all users at once.  You may change the number of rows that appear on this page on the !settings page.</p>"
+msgstr ""
+
+#: userplus.module:20
+msgid "<p>This web page allows you to set configuration options for the \"Userplus\" module.</p>"
+msgstr ""
+
+#: userplus.module:236
+msgid "Notify users of new account"
+msgstr ""
+
+#: userplus.module:240
+msgid "Create accounts"
+msgstr ""
+
+#: userplus.module:301
+msgid "Invalid name/e-mail address combo (%name, %email)."
+msgstr ""
+
+#: userplus.module:319;865
+msgid "The name %name is already taken."
+msgstr ""
+
+#: userplus.module:324
+msgid "The e-mail address %email, which was entered for user %name, is already taken."
+msgstr ""
+
+#: userplus.module:375
+msgid "view"
+msgstr ""
+
+#: userplus.module:385
+msgid "Password and further instructions have been e-mailed to the new user %user."
+msgstr ""
+
+#: userplus.module:388
+msgid "Created new user account %name."
+msgstr ""
+
+#: userplus.module:403
+msgid "username"
+msgstr ""
+
+#: userplus.module:403
+msgid "e-mail address"
+msgstr ""
+
+#: userplus.module:403
+msgid "password"
+msgstr ""
+
+#: userplus.module:519;634
+msgid "The changes have been saved."
+msgstr ""
+
+#: userplus.module:566
+msgid "Save permissions"
+msgstr ""
+
+#: userplus.module:575;712
+msgid "User"
+msgstr ""
+
+#: userplus.module:703
+msgid "Save groups"
+msgstr ""
+
+#: userplus.module:751
+msgid "\"add multiple users\" settings"
+msgstr ""
+
+#: userplus.module:752;799;825
+msgid "These settings affect the operation of the !page page."
+msgstr ""
+
+#: userplus.module:756
+msgid "Maximum number of users that can be added at once"
+msgstr ""
+
+#: userplus.module:760
+msgid "The number of rows that will appear on the page."
+msgstr ""
+
+#: userplus.module:769;812
+msgid "Select the roles that should appear on the form"
+msgstr ""
+
+#: userplus.module:773
+msgid "When adding new users with userplus, only these roles should be available.  Administrators may always add additional roles to users at a later time."
+msgstr ""
+
+#: userplus.module:779
+msgid "Show required profile fields"
+msgstr ""
+
+#: userplus.module:781
+msgid "Enable the user to enter any required (core) profile fields on the page."
+msgstr ""
+
+#: userplus.module:788
+msgid "Show required content profile fields"
+msgstr ""
+
+#: userplus.module:790
+msgid "Enable the user to enter any required content profile fields on the page."
+msgstr ""
+
+#: userplus.module:798
+msgid "\"assign user roles\" settings"
+msgstr ""
+
+#: userplus.module:803;829
+msgid "Number of users to show per page"
+msgstr ""
+
+#: userplus.module:807;833
+msgid "The number of users that will appear per page."
+msgstr ""
+
+#: userplus.module:816
+msgid "When assigning roles with userplus, only these roles should be available."
+msgstr ""
+
+#: userplus.module:824
+msgid "\"assign user groups\" settings"
+msgstr ""
+
+#: userplus.module:868
+msgid "The name %name has been denied access."
+msgstr ""
+
+#: userplus.module:878
+msgid "The e-mail address %email is already taken."
+msgstr ""
+
+#: userplus.module:881
+msgid "The e-mail address %email has been denied access."
+msgstr ""
+
+#: userplus.module:925
+msgid "Enable the contact form for the selected users"
+msgstr ""
+
+#: userplus.module:929
+msgid "Disable the contact form for the selected users"
+msgstr ""
+
+#: userplus.module:338;374;946;960
+msgid "user"
+msgstr ""
+
+#: userplus.module:338
+msgid "New user: %name %email."
+msgstr ""
+
+#: userplus.module:374
+msgid "Userplus: added content profile node type %type for user %user while adding multiple users."
+msgstr ""
+
+#: userplus.module:946;960
+msgid "User %name can now be contacted via their contact form."
+msgstr ""
+
+#: userplus.module:392
+msgid "1 user was added."
+msgid_plural "@count users were added."
+msgstr[0] ""
+msgstr[1] ""
+
+#: userplus.module:910
+msgid "administer userplus settings"
+msgstr ""
+
+#: userplus.module:911
+msgid "add users via userplus"
+msgstr ""
+
+#: userplus.module:912
+msgid "assign roles via userplus"
+msgstr ""
+
+#: userplus.module:913
+msgid "assign groups via userplus"
+msgstr ""
+
+#: userplus.module:44
+msgid "Userplus settings"
+msgstr ""
+
+#: userplus.module:45
+msgid "Settings for the userplus module."
+msgstr ""
+
+#: userplus.module:54
+msgid "Userplus administration"
+msgstr ""
+
+#: userplus.module:55
+msgid "Add multiple users; assign roles to multiple users."
+msgstr ""
+
+#: userplus.module:63
+msgid "add multiple users"
+msgstr ""
+
+#: userplus.module:71
+msgid "assign user roles"
+msgstr ""
+
+#: userplus.module:82
+msgid "assign user groups"
+msgstr ""
+
+#: userplus_actions.module:17
+msgid "Change user's login name"
+msgstr ""
+
+#: userplus_actions.module:23
+msgid "Change user's password"
+msgstr ""
+
+#: userplus_actions.module:54
+msgid "New username"
+msgstr ""
+
+#: userplus_actions.module:55
+msgid "Enter a new username for the selected user."
+msgstr ""
+
+#: userplus_actions.module:86
+msgid "New password"
+msgstr ""
+
+#: userplus_actions.module:88
+msgid "Provide a password for the selected users in both fields."
+msgstr ""
+
+#: userplus.info:0
+msgid "Userplus"
+msgstr ""
+
+#: userplus.info:0
+msgid "The userplus module provides enhanced user administration features."
+msgstr ""
+
+#: userplus_actions.info:0
+msgid "Userplus actions"
+msgstr ""
+
+#: userplus_actions.info:0
+msgid "Provides additional user actions"
+msgstr ""
+

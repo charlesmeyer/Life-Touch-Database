@@ -1,0 +1,102 @@
+<?php
+// $Id: userplus_actions.module,v 1.1.2.1 2009/09/03 22:08:02 marcp Exp $
+
+/**
+ * @file
+ * Provides enhanced user actions for use with views bulk operations
+ * and triggers.
+ */
+
+/**
+ * Implementation of hook_action_info().
+ */
+function userplus_actions_action_info() {
+  $actions = array(
+    'userplus_change_username_action' => array(
+      'type' => 'user',
+      'description' => t('Change user\'s login name'),
+      'configurable' => TRUE,
+      'hooks' => array(),
+    ),
+    'userplus_change_password_action' => array(
+      'type' => 'user',
+      'description' => t('Change user\'s password'),
+      'configurable' => TRUE,
+      'hooks' => array(),
+    ),
+  );
+  return $actions;
+}
+
+/**
+ * Action to change a user's username
+ */
+function userplus_change_username_action_form($context) {
+  $username = '';
+  
+  if (isset($context['selection'])) {
+    $users = $context['selection'];
+    if (count($users) == 1) {
+      $uid = array_pop($users);
+      $user = user_load(array('uid' => $uid));
+      $username = $user->name;
+    }
+    else {
+      drupal_set_message('This action can only be performed on one user.');
+
+      // TODO - we want to go back to the previous page...
+      drupal_goto();
+    }
+  }
+
+  $form['username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('New username'),
+    '#description' => t('Enter a new username for the selected user.'),
+    '#default_value' => $username,
+  );
+
+  return $form;
+}
+
+function userplus_change_username_action_validate($form, $form_state) {
+  $name = $form['username']['#value'];
+  
+  $result = _userplus_validate_user($name);
+  
+  if ($result !== TRUE) {
+    form_set_error('username', $result['name']);
+  }
+}
+
+function userplus_change_username_action_submit($form, $form_state) {
+  return array('name' => $form_state['values']['username']);
+}
+
+function userplus_change_username_action(&$user, $context) {
+  user_save($user, array('name' => $context['name']));
+}
+
+/**
+ * Action to change a user's password
+ */
+function userplus_change_password_action_form($context) {
+  _user_password_dynamic_validation();
+  $form['pass'] = array(
+    '#title' => t('New password'),
+    '#type' => 'password_confirm',
+    '#description' => t('Provide a password for the selected users in both fields.'),
+    '#required' => TRUE,
+    '#size' => 25,
+  );
+
+  return $form;
+}
+
+function userplus_change_password_action_submit($form, $form_state) {
+  return array('pass' => $form_state['values']['pass']);
+}
+
+function userplus_change_password_action(&$user, $context) {
+  user_save($user, array('pass' => $context['pass']));
+}

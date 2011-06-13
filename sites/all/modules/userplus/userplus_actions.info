@@ -1,0 +1,11 @@
+; $Id: userplus_actions.info,v 1.1.2.1 2009/09/03 22:08:02 marcp Exp $
+name = Userplus actions
+description = Provides additional user actions
+core = 6.x
+
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "6.x-2.5"
+core = "6.x"
+project = "userplus"
+datestamp = "1296170228"
+

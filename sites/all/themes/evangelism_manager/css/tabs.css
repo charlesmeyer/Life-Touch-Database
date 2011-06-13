@@ -1,0 +1,178 @@
+
+/*
+ * Tabs CSS
+ *
+ * Adds styles for the primary and secondary tabs.
+ *
+ * Compare this with default CSS found in the system module's stylesheet (a copy
+ * of which is in drupal5-reference.css, line 510.)
+ *
+ */
+
+
+div.tabs {
+  margin: 0 0 0 0;
+}
+
+ul.primary {
+  border-bottom:none;
+  border-collapse:collapse;
+  height:auto;
+  line-height:normal;
+  list-style:none outside none;
+  margin:0px;
+  padding:0 0 0 15px;
+  white-space:nowrap;
+  background-color: #b3c6df;
+  line-height: 30px;
+}
+
+ul.primary li a {
+  background: none;
+  border: none;
+  height:auto;
+  margin-right:0.5em;
+  padding:6px 5px;
+  text-decoration:none;
+  font-size: 17px;
+  font-weight: bold;
+  color: #6e89ae;
+}
+
+ul.primary li a span{
+
+}
+ul.primary li a:hover { 
+  background: none;
+  border: none;
+}
+
+ul.primary li.active a {
+  background: none;
+  border: none;
+  color: #454545;
+}
+
+ul.primary li.active a {
+  background: none;
+  border: none;
+}
+ul.primary li.active a {
+  background: none;
+  border: none;
+}
+
+#header ul.primary {
+  margin: 0;
+  padding: 0 0 0 0;
+  border-width: 0;
+  list-style: none;
+  white-space: nowrap;
+  line-height: normal;
+  background-color: transparent;
+}
+
+#header ul.primary li {
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+
+#header ul.primary li a {
+  background:url("images/icons.png") no-repeat scroll 1px -85px transparent;
+  border-width:0;
+  color:#E0E0E0;
+  display:block;
+  font-weight:bold;
+  height:31px;
+  margin:0;
+  padding:0 0 0 13px;
+  text-decoration:none;
+}
+
+#header ul.primary li a .tab {
+  background:url("images/icons.png") no-repeat scroll right -85px #6e89ae;
+  border-width:0;
+  color:#E0E0E0;
+  display:block;
+  height:31px;
+  line-height:31px;
+  margin:0;
+  padding:0 13px 0 0;
+  text-decoration:none;
+}
+
+#header ul.primary li a:hover {
+  border-width: 0;
+  background-color: transparent;
+  background: url(images/icons.png) no-repeat 1px -85px;
+}
+
+#header ul.primary li a:hover .tab {
+  background: url(images/icons.png) no-repeat right -85px;
+  background-color: #6e89ae;
+}
+
+#header ul.primary li.active a,
+#header ul.primary li.active a:hover {
+  border-width: 0;
+  color: #000;
+  background-color: transparent;
+  background: url(images/icons.png) no-repeat 1px -85px;
+}
+
+#header ul.primary li.active a .tab,
+#header ul.primary li.active a:hover .tab {
+  background: url(images/icons.png) no-repeat right -85px;
+  background-color: #7091AB;
+}
+
+#header ul.primary li.active {
+  display: none;
+}
+
+ul.secondary {
+  margin: 0;
+  padding: 0 0 0 5px;
+  border-bottom: 1px solid #c0c0c0;
+  list-style: none;
+  white-space: nowrap;
+  background: url(images/tabs/tab-secondary-bg.png) repeat-x left bottom;
+}
+
+ul.secondary li {
+  float: left;
+  margin: 0 5px 0 0;
+  padding: 5px 0;
+  border-right: none;
+}
+
+ul.secondary a {
+  display: block;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #c0c0c0;
+  text-decoration: none;
+  color: #777;
+  background: url(images/tabs/tab-secondary.png) repeat-x left -56px;
+}
+
+ul.secondary a .tab {
+  display: block;
+  height: 18px; /* 24px (parent) - 6px (padding) */
+  margin: 0;
+  padding: 3px 8px;
+  line-height: 18px;
+}
+
+ul.secondary a:hover {
+  background: url(images/tabs/tab-secondary.png) repeat-x left bottom;
+}
+
+ul.secondary a.active,
+ul.secondary a.active:hover {
+  border: 1px solid #c0c0c0;
+  color: #000;
+  background: url(images/tabs/tab-secondary.png) repeat-x left top;
+}

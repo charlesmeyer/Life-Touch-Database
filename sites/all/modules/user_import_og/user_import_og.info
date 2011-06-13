@@ -1,0 +1,17 @@
+; $Id: user_import_og.info,v 1.2 2009/03/21 22:34:14 MegaGrunt Exp $
+name = User Import OG
+description = Add options for importing users into Organic Groups.
+dependencies[] = og
+dependencies[] = user_import
+version = "$Name: DRUPAL-6--1-1 $"
+
+
+
+
+core = 6.x
+; Information added by drupal.org packaging script on 2009-03-25
+version = "6.x-1.1"
+core = "6.x"
+project = "user_import_og"
+datestamp = "1237981268"
+

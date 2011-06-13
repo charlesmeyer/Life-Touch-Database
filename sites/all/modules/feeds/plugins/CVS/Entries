@@ -1,0 +1,17 @@
+/FeedsCSVParser.inc/1.16.2.3/Fri Oct 29 18:44:35 2010//TDRUPAL-6--1
+/FeedsDataProcessor.inc/1.24.2.3/Tue Nov 16 21:42:40 2010//TDRUPAL-6--1
+/FeedsFeedNodeProcessor.inc/1.15/Tue Sep  7 17:29:36 2010//TDRUPAL-6--1
+/FeedsFetcher.inc/1.7/Wed Sep 15 19:40:57 2010//TDRUPAL-6--1
+/FeedsFileFetcher.inc/1.15.2.1/Thu Oct 28 20:06:18 2010//TDRUPAL-6--1
+/FeedsHTTPFetcher.inc/1.25/Wed Sep 15 19:40:57 2010//TDRUPAL-6--1
+/FeedsNodeProcessor.inc/1.51.2.2/Mon Oct 25 22:43:03 2010//TDRUPAL-6--1
+/FeedsOPMLParser.inc/1.6.2.1/Mon Oct 25 22:43:03 2010//TDRUPAL-6--1
+/FeedsParser.inc/1.22.2.4/Mon Oct 25 22:53:53 2010//TDRUPAL-6--1
+/FeedsPlugin.inc/1.6/Tue Sep  7 17:29:36 2010//TDRUPAL-6--1
+/FeedsProcessor.inc/1.18/Fri Sep 10 15:44:56 2010//TDRUPAL-6--1
+/FeedsSimplePieParser.inc/1.14.2.1/Mon Oct 25 22:43:03 2010//TDRUPAL-6--1
+/FeedsSitemapParser.inc/1.3.2.2/Mon Oct 25 22:43:03 2010//TDRUPAL-6--1
+/FeedsSyndicationParser.inc/1.17.2.1/Mon Oct 25 22:43:04 2010//TDRUPAL-6--1
+/FeedsTermProcessor.inc/1.20.2.2/Thu Oct 28 20:48:10 2010//TDRUPAL-6--1
+/FeedsUserProcessor.inc/1.19/Tue Sep  7 17:29:36 2010//TDRUPAL-6--1
+D

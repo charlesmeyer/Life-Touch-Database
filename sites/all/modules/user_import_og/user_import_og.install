@@ -1,0 +1,20 @@
+<?php
+// $Id: user_import_og.install,v 1.2 2009/03/21 22:34:14 MegaGrunt Exp $
+
+/**
+ * @file
+ * Install and un-install database tables and values for the module User Import OG 
+ *
+ */
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function user_import_og_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('user_import_og');
+
+  variable_del('user_import_og_template');
+}
+

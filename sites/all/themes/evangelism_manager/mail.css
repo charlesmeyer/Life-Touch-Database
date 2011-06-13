@@ -1,0 +1,325 @@
+
+/** Font styles 
+---------------------------------*/
+
+
+body {
+  margin: 0;
+
+  font: 15px/1.3em "Helvetica Neue", helvetica, Arial, sans-serif;
+  letter-spacing:0.03em;
+  height: 100%;
+  background-color: #FAFAFA;
+}
+
+
+
+
+/* Titles  */
+
+h1, h2, h3, h4, h5, h6 {line-height:1.3em;}
+
+h1 {
+	font-size: 1.4em;
+	font-weight:300;
+	padding: 0 0 0 0;
+	margin: 0;
+}
+
+h2 {font-size:1.4em;font-weight:300;margin-bottom:0.75em;}
+h3 {font-size:1.3em;margin-bottom:1em;}
+h4 {font-size:1.2em;margin-bottom:0.8em;}
+h5 {font-size:1.0em;font-weight:600;margin-bottom:0;}
+h6 {font-size:1em;font-weight:bold;}
+
+/* Paragraph Styles */
+
+p {
+  margin:0 0 1em 0;
+}
+
+
+
+
+#content-area {
+  padding: 0px 20px 5px 20px;
+}
+
+
+
+.node .title {
+  padding-top: 18px;
+  color: #454545;
+  margin-bottom: 0px;
+}
+.field-field-last-contact {
+  line-height: 25px;
+  padding-bottom: 5px;
+}
+
+.nocontact .field-field-last-contact .field-items {
+  padding-left: 29px;
+  background:url("images/icons.png") no-repeat scroll  -1px -52px transparent;
+}
+
+.nocontact .field-field-last-contact .field-items .field-item {
+  background-color: #EAEAEA;
+}
+
+.node .title a{
+  color: #454545;
+  text-decoration: none;
+}
+
+.node .title a:hover,
+.node .title a:active {
+  color: #6e89ae;
+}
+
+
+.assigned .content:before {
+  position: absolute;
+  top: 8px;
+  left: 0px;
+  color: #AE2A2A;
+  z-index: 1;
+  font-size: 0.7em;
+	content: "Assigned";
+  
+}
+
+.alinks_title {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+a.alink {
+  text-align: center;
+  vertical-align: middle;
+  line-height: 38px;
+  font-weight: bold;
+  margin: 3px 11px 9px 3px;
+  padding: 5px;
+  font-size: 16px;
+}
+
+
+
+.fieldgroup {
+  line-height: 1.6em;
+}
+
+fieldset {
+  border: none;
+  background-color: #FFFFFF;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  padding-right: 10px;
+}
+
+.field-field-address .field-label-inline-first {
+  float: left;
+  display: block;
+  height: 35px;
+}
+
+.field-field-city,
+.field-field-state,
+.field-field-zip {
+  display: inline;
+}
+
+.field-field-city .field-items,
+.field-field-state .field-items,
+.field-field-zip .field-items {
+  display: inline;
+}
+
+.field-field-city .field-item,
+.field-field-state .field-item,
+.field-field-zip .field-item {
+  display: inline;
+}
+
+.field-field-city .field-item:after,
+.field-field-state .field-item:after{
+  content: ",";
+}
+
+.field-item {
+  font-size: 17px;
+}
+
+.field-label-inline-first {
+  color: #516c74;
+  font-size: 13px;
+}
+.field-label {
+  color: #516c74;
+  font-size: 13px;
+}
+
+.group-phone {
+  line-height: 1.7em;
+}
+
+.group-progress .field,
+.group-progress .field-items,
+.group-progress .field-item {
+  display: inline;
+}
+
+.group-progress .field-item {
+  text-decoration: underline;
+  margin-right: 5px;
+}
+
+.group-progress .field-field-status .field-item {
+  text-decoration: none;
+}
+
+.field-field-attended:before {
+  content: "Spiritual condition: ";
+  color:#516C74;
+font-size:13px;
+font-weight:bold;
+}
+
+
+
+.group-point-of-contact {
+  position: relative;
+  min-height: 20px;
+}
+
+.field-field-first-contact  {
+  position: absolute;
+  top: 0px;
+  left: 120px;
+}
+
+.contact-list-header {
+  color: #516c74;
+  font-size: 15px;
+  line-height: 1.8em;
+  font-weight: bold;
+}
+
+.contact-record-list .item {
+  line-height: 1.2em;
+  border-bottom: 1px solid #EAEAEA;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.contact-record-list .date {
+  font-weight: bold;
+}
+
+.contact-record-list .type {
+  font-weight: bold;
+}
+
+a.recordedit {
+  color: #D0D0D0;
+  text-decoration: none;
+}
+
+a.recordedit:hover {
+  color: #454545;
+  text-decoration: none;
+}
+
+#edit-field-last-contact-0-value-wrapper {
+  display: none;
+}
+
+#edit-field-assigned-value-wrapper {
+  display: none;
+}
+
+.group-phone legend,
+.group-address legend,
+.group-email legend,
+.group-point-of-contact legend,
+.group-notes legend {
+  display: none;
+}
+
+
+a.maplink {
+  background-color:#6E89AE;
+  color:#E0E0E0;
+  display:block;
+  font-size:16px;
+  font-weight:bold;
+  height:30px;
+  line-height:30px;
+  margin: 6px 11px 9px 0;
+  text-align:center;
+  text-decoration:none;
+  vertical-align:middle;
+  width:100px;
+}
+
+.node-type-prospect.section-node-edit #homelink {
+  display: none;
+}
+
+.node-type-prospect.section-node-edit .menu-21,
+.node-type-prospect.section-node-edit .menu-4 {
+  display: none;
+}
+
+.section-node-edit fieldset.group-progress {
+  margin-top: -20px;
+}
+
+fieldset.group-progress legend {
+  padding-top: 26px;
+  font: bold 15px/1.3em "Helvetica Neue",helvetica,Arial,sans-serif;
+  letter-spacing:0.03em;
+  margin-bottom: -5px;
+}
+
+/* tables */
+table {
+  font-size: 12px;
+  width: 100%;
+  margin: 0 0 5px 0;
+}
+
+thead {
+  border: 1px solid #cad4e6;
+  background: #e0ecff;
+  color: #027AC6;
+  text-shadow: 0 1px 0 #fff;
+}
+
+thead th {
+  font-weight: bold;
+  padding: 2px 6px;
+  border: 0;
+}
+
+tr.even {
+  border: 1px solid #cad4e6;
+}
+
+tr.odd {
+  border: 1px solid #cad4e6;
+  background-image: none;
+  background-color: #fff;
+}
+
+td {
+  padding: 1px 4px;
+}
+
+td.views-field-title {
+  width: 200px;
+}
+
+td.views-field-field-assigned-value {
+  width: 90px;
+}

@@ -1,0 +1,72 @@
+.view-master-list h3, .view-master-list h3 span {
+  font-size: 20px;
+
+}
+
+.view-master-list h3 {
+  margin: 10px 0px 0px 0px;
+    border-bottom: 1px solid #1f1f1f;
+}
+
+.view-master-list .views-field-title span {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.view-master-list .views-field-title {
+  margin-top: 6px;
+}
+
+.view-master-list .views-field-name, .view-master-list .views-field-name span{
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.view-master-list .views-field-field-status-value {
+  margin-left: 10px;
+  padding-left: 0px;
+}
+
+.view-master-list .views-field-field-status-value label {
+  margin: 0;
+  padding: 0;
+}
+
+.views-field-contact-log {
+  margin-left: 10px;
+  padding-left: 0px;
+}
+
+.views-field-contact-log .notyet {
+  font-weight: bold;
+}
+
+.view-master-list .views-field-phpcode {
+  margin-left: 10px;
+  padding-left: 0px;
+}
+
+.view-master-list .views-field-phpcode label {
+  margin: 0;
+  padding: 0;
+}
+
+#navigation.i24 {
+  min-height: 0px;
+}
+
+#navigation {
+  min-height: 0px;
+}
+#navigation.i24 .item-list {
+  min-height: 50px;
+}
+
+#navigation .item-list{
+  min-height: 24px;
+}
+
+.views-field-contact-log .date , .views-field-contact-log .type {
+  font-weight: bold;
+}
+

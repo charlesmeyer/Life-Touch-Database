@@ -1,0 +1,452 @@
+<?php
+
+include_once('lt_student.features.inc');
+
+/**
+ * @file
+ * Custom code for the Personal Evangelism Manager application by Lancaster Baptist Church
+ */
+
+/**
+* Implementation of hook_form_alter().
+*/
+function lt_student_form_alter(&$form, $form_state, $form_id) {
+  // Check for a particular content type's node form.
+  if ($form_id == 'lt_student_node_form') {
+    // Add an after_build function to process when everything's complete.
+    if ($_GET["mode"] == "bulk") {
+      $form['author']['name']['#default_value'] = '';
+    }
+    
+    //clean up the node add form - we don't need content management stuff
+    $form['author']['#collapsible'] = FALSE;
+    $form['author']['#collapsed'] = FALSE;
+    $form['options']['status']['#type'] = 'hidden';
+    $form['options']['promote']['#type'] = 'hidden';
+    $form['options']['sticky']['#type'] = 'hidden';
+    $form['options']['#type'] = 'hidden';
+    unset($form['menu']);
+    unset($form['revision_information']);
+    
+    unset($form['buttons']['preview']);
+    $form['topsave']['submit'] = $form['buttons']['submit'];
+    $form['topsave']['#weight'] = -20;
+    $form['topsave']['#type'] = 'fieldset';
+    $form['topsave']['#attributes'] = array('id' => 'topbutton');
+    
+  }
+  elseif ($form_id == 'lt_class_node_form'){
+    if ($_GET["mode"] == "add") {
+      $form['author']['name']['#default_value'] = '';
+    }
+    $form['options']['status']['#type'] = 'hidden';
+    $form['options']['promote']['#type'] = 'hidden';
+    $form['options']['sticky']['#type'] = 'hidden';
+    $form['options']['#type'] = 'hidden';
+    $form['author']['#collapsible'] = FALSE;
+    $form['author']['#collapsed'] = FALSE;
+  }
+}
+
+function lt_student_perm() {
+return array('record contacts', 'view all lt_students', 'manage lt_students', 'assign visits');
+}
+
+/**
+* Implementation of hook_menu().
+* This is where we put any new paths or menu items that we need.
+*/
+function lt_student_menu() {
+
+  $items['node/%node/record/%'] = array(
+    'title' => 'Record contact',
+    'access arguments' => array('record contacts'),
+    'page callback' => 'lt_student_record_contact',
+    'page arguments' => array(1,3),
+    'type' => MENU_CALLBACK,
+    'file' => 'lt_student.admin.inc',
+  );
+  
+  $items['node/%node/record'] = array(
+    'title' => 'Record contact',
+    'access arguments' => array('record contacts'),
+    'page callback' => 'lt_student_record_contact',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'file' => 'lt_student.admin.inc',
+  );
+ 
+  
+  $items['contact_record/%lt_student_contact/edit'] = array(
+    'title' => 'Edit record',
+    'page callback' => 'lt_student_page_edit',
+    'page arguments' => array(1),
+    'access arguments' => array('record contacts'),
+    'type' => MENU_CALLBACK,
+    'file' => 'lt_student.admin.inc',
+  );
+
+  $items['contact_record/%lt_student_contact/delete'] = array(
+    'title' => 'Delete record',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lt_student_delete_confirm', 1),
+    'access arguments' => array('record contacts'),
+    'type' => MENU_CALLBACK,
+    'file' => 'lt_student.admin.inc',
+  );
+
+  $items['lt_students'] = array(
+    'title' => 'Lifetouch',
+    'page callback' => 'lt_student_main_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['lt_students/%user_uid_optional'] = array(
+    'title' => 'Active',
+    'page callback' => 'lt_student_view_list',
+    'page arguments' => array('active', 1),
+    'access callback' => 'user_view_access',
+    'access arguments' => array(1),
+    'parent' => '',
+  );
+  
+  $items['403redirect'] = array(
+    'page callback' => 'lt_student_403_redirect',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
+
+
+
+
+
+function lt_student_menu_alter(&$items) {
+    $items['node/%node/view']['title'] = 'Cancel';
+}
+
+/**
+ * Loader function for individual records.
+ *
+ * Because we use '%lt_student_contact' as a wildcard in our hook_menu()
+ * handler, this function will also be called automatically when we go to edit
+ * or delete a record. Thanks, Menu API!.
+ *
+ * @param $contact_id
+ *   An int containing the ID of a record.
+ * @return
+ *   A single record in array format, or FALSE if none matched the incoming ID.
+ */
+function lt_student_contact_load($contact_id) {
+  $sql = "SELECT * FROM {lt_contact} WHERE contact_id = %d";
+  $result = db_query($sql, $contact_id);
+  if ($record = db_fetch_array($result)) {
+	return $record;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Inserts a new record, or updates an existing one.
+ *
+ * Automatically inserts or updates, based on whether the record's unique ID has
+ * been set yet. Because drupal_write_record() updates the record itself (adding
+ * the unique ID after the database has been updated), we return the record
+ * after saving it.
+ *
+ * This allows any calling function to check the id of the returned record and
+ * act on the ID as needed (redirecting to a 'view' page after inserting, etc).
+ *
+ * @param $record
+ *   A record to be saved. If $record['record_id'] is set, the record will be updated.
+ *   Otherwise, a new record will be inserted into the database.
+ * @return
+ *   The saved record, with its ID set.
+ */
+function lt_student_contact_save($record) {
+  if (isset($record['contact_id'])) {
+    drupal_write_record('lt_contact', $record, 'contact_id');
+  }
+  else {
+    drupal_write_record('lt_contact', $record);
+  }
+  lt_student_update_last_visit($record['nid'], $record['type'] == 'visit'); //update the node's date of last visit
+  return $record;
+}
+
+/**
+ * Deletes a record, given its unique ID.
+ *
+ * @param $record_id
+ *   An int containing the ID of a record.
+ */
+function lt_student_contact_delete($contact_id) {
+  $record = lt_student_contact_load($contact_id);
+  $sql = 'DELETE FROM {lt_contact} WHERE contact_id = %d';
+  db_query($sql, $contact_id);
+  lt_student_update_last_visit($record['nid']); //update the node's date of last visit
+}
+
+function lt_student_record_contact($node, $contact_type = "") {
+  $page_title = 'Record ' . $contact_type .  ' for ' . $node->title;
+  drupal_set_title($page_title);
+  $output = '<h2>' . $page_title . '</h2>';
+  //set some default values to be submitted with the form
+  $record = array(
+    'type' => $contact_type,
+	'nid' => $node->nid, 
+  );
+  $output .= drupal_get_form("lt_student_form", $record);
+  return $output;
+}
+
+
+function lt_student_nodeapi(&$node, $op, $teaser = NULL, $a4  = NULL) {
+  global $user;
+  if ($op == 'view' && $node->type == "lt_student") {
+    /*if ($user->uid != $node->uid && !user_access('view all lt_students', $user)) {
+      drupal_access_denied();
+    }*/
+    
+    
+  if ($node->field_phone_home_area[0]["value"]) {
+    $node->content["field_phone_home"]["field"]["items"][0]["#item"]["safe"] = $node->field_phone_home_area[0]["value"] . "-" . $node->field_phone_home[0]["value"];
+  }
+  elseif ($node->field_phone_home[0]["value"]) {
+    $node->content["field_phone_home"]["field"]["items"][0]["#item"]["safe"] = "661-" . $node->field_phone_home[0]["value"];
+  }
+  
+  if ($node->field_phone_mobile_area[0]["value"]) {
+    $node->content["field_phone_mobile"]["field"]["items"][0]["#item"]["safe"] = $node->field_phone_mobile_area[0]["value"] . "-" . $node->field_phone_mobile[0]["value"];
+  }
+  elseif ($node->field_phone_mobile[0]["value"]) {
+    $node->content["field_phone_mobile"]["field"]["items"][0]["#item"]["safe"] = "661-" . $node->field_phone_mobile[0]["value"];
+  }
+    //add a set of action links
+	if (!$teaser) {
+      $alinks = '<div class="alinks_title">Record Contact:</div>';
+	  $alinks .= '<div class="alinks clearfix">';
+	  $alinks .= '<a class="alink visit" href="/node/' . $node->nid  . '/record/visit?destination=' .  $_GET['q'] . '">visit</a> ';
+	  $alinks .= '<a class="alink call" href="/node/' . $node->nid  . '/record/call?destination=' .  $_GET['q'] . '">call</a> ';
+	  $alinks .= '<a class="alink card" href="/node/' . $node->nid  . '/record/card?destination=' .  $_GET['q'] . '">card</a> ';
+    $alinks .= '<a class="alink appt" href="/node/' . $node->nid  . '/record/appt?destination=' .  $_GET['q'] . '">appt</a> ';
+	  $alinks .= '<a class="alink email" href="/node/' . $node->nid  . '/record/email?destination=' .  $_GET['q'] . '">email</a> ';
+	  $alinks .= '<a class="alink parent-call" href="/node/' . $node->nid  . '/record/parent-call?destination=' .  $_GET['q'] . '">parent-call</a> ';
+    $alinks .= '<a class="alink parent-letter" href="/node/' . $node->nid  . '/record/parent-letter?destination=' .  $_GET['q'] . '">parent-letter</a> ';
+	  $alinks .= '<a class="alink other" href="/node/' . $node->nid  . '/record/other?destination=' .  $_GET['q'] . '">other</a>';
+	  $alinks .= '</div>';
+	  $node->content['alinks'] = array(
+        '#value' => $alinks,
+		//TODO replace this with a call the the theme() function.
+        '#weight' => 1,
+    );
+      
+    if ($node->field_address[0]['safe'] != ""){
+      $printlink = "<a class='maplink printlink' href='/print-visit/";
+      $printlink .= $node->nid;
+      $printlink .= "'>Print Visit</a>";
+      $node->content['printlink'] = array(
+          '#value' => $printlink,
+  		//TODO replace this with a call the the theme() function.
+          '#weight' => 5,
+      );
+      $maplink = "<a class='maplink external' target='_blank' href='http://maps.google.com/maps?q=";
+      $maplink .= $node->field_address[0]['safe'];
+      if ($node->field_city[0]['safe'] != ""){
+        $maplink .= "," . $node->field_city[0]['safe'];
+      }
+      if ($node->field_state[0]['safe'] != ""){
+        $maplink .= "," . $node->field_state[0]['safe'];
+      }
+      if (isset($node->field_zip[0]['value'])){
+        $maplink .= "," . $node->field_zip[0]['value'];
+      }
+      $maplink .= "'>View Map</a>";
+      $node->content['maplink'] = array(
+          '#value' => $maplink,
+  		//TODO replace this with a call the the theme() function.
+          '#weight' => 5,
+      );
+
+    }
+	}
+	
+    //add a listing of contacts
+	if (!$teaser) {
+	  $sql = "SELECT * FROM {lt_contact} n WHERE n.nid = %d ORDER BY date DESC";
+      $result = db_query(db_rewrite_sql($sql), $node->nid);
+	  $output = '<fieldset class="contact-record-list"><div class="contact-list-header">Activity Log:</div>';
+	  while ($data = db_fetch_object($result)) {
+        unset($theuser);
+        $theuser->uid = $data->uid;
+        $username = theme('username', $theuser, array('plain' => FALSE));
+        if ($data->uid2){
+          unset($theuser2);
+          $theuser2->uid = $data->uid2;
+          $username2 = theme('username', $theuser2, array('plain' => FALSE));
+        }
+        $output .= '<div class="item ' . $data->type . '"><span class="date">' . date("n/j/y", $data->date) . '</span> <span class ="user1">' . $username . '</span>';
+        if ($data->uid2) {
+          $output .= ', <span class ="user2">' . $username2 . '</span>';
+        }
+        $output .= ' <span class="type">';
+        $output .= $data->type . ':</span> <span class="comment">' . $data->comments . '</span>';
+        $output .= ' <a class="recordedit" href="/contact_record/' . $data->contact_id . '/edit" >edit</a></div>';
+      }
+      $output .= '</fieldset>';
+      $node->content['list_contacts'] = array(
+        '#value' => $output,
+		//TODO replace this with a call the the theme() function.
+        '#weight' => 30,
+      );
+    }
+  
+  }
+  elseif ($op == 'delete' && $node->type == "lt_student") {
+    db_query('DELETE FROM {lt_contact} WHERE nid = %d', $node->nid);  
+  }
+  return $node;
+}
+
+function lt_student_update_last_visit($nid, $isvisit = FALSE) {
+  $sql = "SELECT date FROM {lt_contact} n WHERE n.nid = %d ORDER BY
+n.date DESC";
+  $result = db_query_range(db_rewrite_sql($sql), $nid, 0, 1);
+  $data = db_fetch_object($result);
+  $node = node_load($nid);
+  $need_save = FALSE;
+  if ($data->date != $node->field_last_contact[0]['value']) {
+    $node->field_last_contact[0]['value'] = $data->date;
+    $need_save = TRUE;
+  }
+  if ($isvisit && $data->date != $node->field_last_visit[0]['value']) {
+    $node->field_last_visit[0]['value'] = $data->date;
+    $need_save = TRUE;
+    
+  }
+  if ($need_save) {
+    node_save($node);
+  }
+}
+
+function lt_student_view_list($list, $user) {
+  drupal_set_title("Lifetouch");
+  $group = Current($user->og_groups);
+  $output = "<h4>" . theme('username', $user, array('plain' => FALSE)) . "</h4>";
+  if ($group){
+  $output .= '<h1>' . $group['title'] . '</h1>';
+  $output .= '<div class="classlinks">' ;
+  $output .= l(t('Roster'),"class/" . $group['nid'], array('attributes' => array('class' => 'classroster')));
+  $output .= l(t('No Contact'),"class/" . $group['nid'] . "/no-contact", array('attributes' => array('class' => 'classnocontact')));
+  $output .= l(t('No Visit'),"class/" . $group['nid'] . "/no-visit", array('attributes' => array('class' => 'classnovisit')));
+  $output .= l(t('Birthdays'),"class/" . $group['nid'] . "/birthdays", array('attributes' => array('class' => 'classbirthdays')));
+  $output .= "</div>";
+  }
+  else {
+    $output = "You have not been assigned to a class.";
+  }
+  
+  return $output;
+}
+
+
+/**
+ * Access callback for path /lt_students.
+ *
+ * Displays lt_student list if user is logged in, or login form for anonymous
+ * users.
+ */
+function lt_student_main_page() {
+  global $user;
+  if ($user->uid) {
+    menu_set_active_item('lt_students/'. $user->uid);
+    
+    return menu_execute_active_handler();
+  }
+  else {
+    header('Location: '. url("user", array('absolute' => TRUE, 'query' => 'destination=<front>')), TRUE, 302);
+  }
+}
+
+function lt_student_403_redirect() {
+  global $user;
+ 
+  //check for anonymous users
+  if ($user->uid == 0) {
+    $dest = $_REQUEST['destination'];
+   
+    //checking for a redirect by drupal on logout to keep from setting a bogus "destination" parameter
+    if ($dest != variable_get('site_frontpage', 'node')){
+      header('Location: '. url("user", array('absolute' => TRUE, 'query' => 'destination=' . $dest)), TRUE, 302);
+    }
+   
+    //on logout, redirect back to login page
+    else {
+      header('Location: '. url("user", array('absolute' => TRUE)), TRUE, 302);
+    }
+  }
+ 
+  //user is already logged in so just give the standard error page content.
+  else {
+    drupal_set_title('403 Access Denied');
+    return ('You are not authorized to access this page.');
+  }
+}
+
+/**
+* Implementation of hook_views_api().
+*   This tells drupal that there is Views integration file
+*      named   module-name.views.inc
+
+function lt_student_views_api() {
+  return array('api' => 2.0);
+}
+*/
+function lt_student_page_access() {
+  return ($GLOBALS['user']->uid == arg(1)) || user_access('view all lt_students');
+}
+
+function lt_student_views_query_alter(&$view, &$query){
+if ($view->name == 'birthday') {
+$query->orderby[0]= "((DAYOFYEAR(node_data_field_first.field_birthday_value) - DAYOFYEAR(NOW()) + 365 ) % 365) ASC";
+}
+}
+
+
+
+
+function lt_student_user($op, $edit, &$account, $category = NULL) {
+  global $user;
+
+  switch ($op) {
+    case 'view':
+      if ($account->og_groups) {
+        foreach ($account->og_groups as $key => $val) {
+          $links[$key] = l($val['title'], "class/$key") . theme('og_format_subscriber_status', $val);
+        }
+        $account->content['summary']['#access'] = FALSE;
+        $account->content['class'] = array(
+          '#type' => 'item',
+          '#title' => t('Class'),
+          '#value' => theme('item_list', $links),
+          // Not working in 6
+          // '#theme' => 'item_list',
+          '#attributes' => array('class' => 'og_groups'),
+          // Only show list of groups to self and admins. TOOD: Make this configurable or doable via Views.
+          '#access' => $account->uid == $user->uid || user_access('administer organic groups'),
+        );
+        $account->content['visitation'] = array(
+          '#type' => 'item',
+          '#title' => t('Visitation report'),
+          '#value' => views_embed_view('visitation_report_user', 'default', $account->uid),
+          '#attributes' => array('class' => 'user-visit-report'),
+        );
+      }
+      break;
+  }
+}

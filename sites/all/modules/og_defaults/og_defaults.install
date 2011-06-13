@@ -1,0 +1,48 @@
+<?php
+// $Id: og_defaults.install,v 1.1.2.1 2010/08/13 00:28:56 kaleworsley Exp $
+
+/**
+ * @file
+ * Install file for og_defaults.
+ *
+ * @author Kale Worsley kale@egressive.com
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function og_defaults_install() {
+  // Get the weight of the og_access module.
+  $weight = db_result(db_query("SELECT weight FROM {system} WHERE name = 'og_access' AND type = 'module'"));
+  // Put this module after og access so it can form_alter as needed.
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'og_defaults'", $weight + 1);
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function og_defaults_uninstall() {
+  $variables = array(
+    'og_selective',
+    'og_selective_enforce',
+    'og_register',
+    'og_register_enforce',
+    'og_directory',
+    'og_directory_enforce',
+    'og_theme',
+    'og_theme_enforce',
+    'og_description',
+    'og_description_enforce',
+    'og_language',
+    'og_language_enforce',
+    'og_menu',
+    'og_menu_enforce',
+    'og_audience'
+  );
+  
+  foreach (og_get_types('group') as $type) {
+    foreach ($variables as $variable) {
+      variable_del("{$variable}_{$type}");
+    }
+  }
+}

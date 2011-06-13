@@ -1,0 +1,49 @@
+#toppanel {
+  display: none;
+}
+
+#navigation {
+  display: none;
+}
+
+#breadcrumb .breadcrumb {
+  display: none;
+}
+
+#breadcrumb h2 {
+  float: none;
+  font-size: 35px;
+  color: #000000;
+}
+
+#tabs-primary, #tabs-secondary {
+  display: none;
+}
+
+.view-filters {
+  display: none;
+}
+
+.level-1 {
+  border-style: none;
+}
+
+.pager {
+  display: none;
+}
+
+.sidebar-left #content {
+    padding-left: 0px;
+}
+
+#sidebar-left {
+  display: none;
+}
+
+#views-bulk-operations-select {
+  display: none;
+}
+
+.view-footer {
+  display: none;
+}

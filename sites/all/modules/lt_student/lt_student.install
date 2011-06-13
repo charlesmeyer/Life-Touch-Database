@@ -1,0 +1,111 @@
+<?php
+
+/**
+ * @file
+ * Personal Evangelism Maniger module's install and uninstall code.
+ */
+
+/**
+ * Implementation of hook_install().
+ *
+ * This hook is called the first time the module is installed. Unless it is
+ * explicitly uninstalled, disabling and re-enabling will not trigger this hook
+ * a second time.
+ */
+function lt_student_install() {
+  drupal_install_schema('lt_student');
+}
+
+/**
+ * Implementation of hook_schema().
+ *
+ * This hook should return a SchemaAPI array with a full definition of the most
+ * up-to-date version of the module's database tables.
+ */
+function lt_student_schema() {
+  $schema['lt_contact'] = array(
+    'description' => t('Stores custom links to be added to nodes.'),
+    'fields' => array(
+      'contact_id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "Unique identifier for the contact record.",
+      ),
+	  'type' => array(
+        'description' => 'The type of contact recorded.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+	  ),
+    'comments' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => "Comments about the contact i.e. how  the visit whent.",
+      ),
+	  'created' => array(
+        'description' => 'The Unix timestamp when the record was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+	  'date' => array(
+        'description' => 'The Unix timestamp when the contact took place.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+	  'uid' => array(
+        'description' => 'The uid of the user that recorded this contact.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 0,
+	  ),
+    'uid2' => array(
+        'description' => 'The uid of the ther user made this contact.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 0,
+	  ),
+	  'nid' => array(
+        'description' => 'The nid of the prospect that this contact was with.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+	  ),
+    'number' => array(
+        'description' => 'The count of doors knocked, etc.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+	  ),
+    ),
+	'indexes' => array(
+      'lt_contact_created'  => array('created'),
+      'lt_contact_date'     => array('date'),
+      'lt_contact_type'     => array(array('type', 4)),
+      'lt_contact_uid'      => array('uid'),
+      'lt_contact_nid'      => array('nid'),
+      ),
+    'primary key' => array('contact_id'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ *
+ * This hook is called when the already-disabled module is explicitly uninstalled
+ * by the administrator -- simple disabling the module will trigger hook_disable().
+ * It should delete any database tables added by the module, remove any variables
+ * that are unique to the module, and clear out any cached data.
+ */
+function lt_student_uninstall() {
+  drupal_uninstall_schema('lt_student');
+  cache_clear_all('lt_student:*', 'cache', TRUE);
+  variable_del('lt_student_setting');
+}
+
+

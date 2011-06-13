@@ -1,0 +1,539 @@
+<?php
+// $Id: user_import_og.module,v 1.2 2009/03/21 22:34:14 MegaGrunt Exp $
+
+/**
+ * @file
+ * Import users from a comma separated file (csv).
+ */
+
+/**
+ * - - - - - - - -  HOOKS - - - - - - - - 
+ */
+
+/**
+ * Implementation of hook_perm().
+ */
+function user_import_og_perm() {
+  return array('og user import');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function user_import_og_menu() {
+	$items['og/user_import'] = array(
+	  'title' => 'Import Users',
+	  'page callback' => 'user_import_og_multiple_import',
+	  'access arguments' => array('limited user import'),
+	  'type' => MENU_CALLBACK 
+	); 
+
+	return $items;
+}
+
+/**
+ * Implementation of hook_block() 
+ */
+function user_import_og_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0]['info'] = t('OG Add Users');
+    return $blocks;
+  }
+  elseif ($op == 'view') {
+    switch ($delta) {
+      case 0: 
+ 
+        // this is a og node and user has perm to add users
+        if (arg(0) == 'node' && is_numeric(arg(1)) && user_access('og user import') && $og_node = og_set_group_context()) { 
+          $node = $og_node;
+          // check user is admin of this og
+          if (!node_access('update', $og_node)) return; // $og_node gets set to TRUE and looses node object here, so we save data on line above
+
+          $template_settings = variable_get('user_import_og_template', array());
+          $subscribe_feature_settings = variable_get('user_import_og_subscribe', array());
+          $template = $template_settings[$node->type];
+          $subscribe_feature = $subscribe_feature_settings[$node->type];
+
+          if (!empty($subscribe_feature)) $content = drupal_get_form('user_import_og_add_existing_user_form', $node);
+          if (!empty($template)) $content .= drupal_get_form('user_import_og_preconfigured', $node->nid, $template); 
+          $block['content'] = $content; 
+          $block['subject'] = t('Add Users');
+          return $block;
+        }  
+
+      break;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_user_import_form_fieldsets().
+ */
+function user_import_og_user_import_form_fieldset($import, $collapsed) {
+
+  $groups = user_import_og_get_groups();
+  $groups_description = empty($groups) ? t('No Groups have been defined.') : t('Select which group(s) imported users should be assigned.');
+  
+  $form['group_assign'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Group Assign'),
+      '#description' => $groups_description,
+      '#collapsible' => TRUE,
+      '#collapsed' => $collapsed, 
+  );
+  
+  if (!empty($groups)) {
+
+    $form['group_assign']['groups'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Groups'),
+      '#options' => $groups,
+      '#default_value' => empty($import['options']['groups']) ? array() : $import['options']['groups'],
+    );
+    
+    $form['group_assign']['existing'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Existing Users'),
+      '#description' => t("'Update Existing Users' options can be used to add existing accounts to selected groups. Optionally send them an email. Note - one email will be sent for each group being subscribed to."),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE, 
+    );
+     
+    $form['group_assign']['existing']['existing_og_subject'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Message Subject'),
+      '#default_value' => $import['options']['existing_og_subject'],
+      '#description' => t('Customize the subject of the email sent to existing users being added to groups.') .' '. t('Available variables are:') .' !username, !site, !uri, !uri_brief, !mailto, !date, !login_uri, !edit_uri'. $profile_string .'.',
+    );
+    
+    $form['group_assign']['existing']['existing_og_markup'] = array(
+      '#type' => 'radios',
+      '#title' => t('Email Format'),
+      '#default_value' => empty($import['options']['existing_og_markup']) ? 0 : $import['options']['existing_og_markup'],
+      '#options' => array(t('Plain Text'), t('HTML')),
+    );
+     
+    $form['group_assign']['existing']['existing_og_message'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Email Body'),
+      '#default_value' => $import['options']['existing_og_message'],
+      '#description' => t('Message to send existing users being added to groups. Users who are already in a group will not be sent a message.') .' '. t('Available variables are:') .' !username, !site, !uri, !uri_brief, !mailto, !date, !login_uri, !edit_uri'. $profile_string .'.',
+    );
+    
+    $form['group_assign']['existing']['existing_og_css'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Email CSS'),
+      '#default_value' => $import['options']['existing_og_css'],
+      '#description' => t('Use if sending HTML formated email.'),
+    );
+  
+  }
+       
+  return $form;
+}
+
+/**
+ * Implementation of hook_user_import_after_save().
+ */
+function user_import_og_user_import_after_save($settings, $account, $password, $fields, $updated, $update_setting_per_module) {
+
+	if (empty($settings['options']['groups'])) return;
+	
+	$organic_groups = user_import_og_get_groups();
+  if (empty($organic_groups)) return;
+
+	$og_args = array('is_active' => 1, 'is_admin' => 0, 'mail_type' => 0, 'created' => time());
+	
+	if ($updated) {
+
+    $update_setting = $update_setting_per_module['user_import_og'];
+		if (empty($update_setting)) return;
+		/**
+		 * @todo move this to _user_import_send_email(), which receives the $account anyway.
+		 */
+	  if (!empty($settings['options']['existing_og_message'])) $profile = user_import_profile_load($account);
+
+	  $groups_subscribed = og_get_subscriptions($account->uid);
+
+		foreach ($settings['options']['groups'] as $group_id => $selected) {
+
+			if ($update_setting == UPDATE_REPLACE && empty($selected)) {
+				og_delete_subscription($group_id, $account->uid);
+			}
+			elseif (($update_setting == UPDATE_REPLACE && !empty($selected)) || ($update_setting == UPDATE_ADD && !empty($selected) && empty($groups_subscribed[$group_id]))) {
+				// subscribe to group
+				og_save_subscription($group_id, $account->uid, $og_args);
+				// send email
+				if (!empty($settings['options']['existing_og_message'])) _user_import_send_email($account, $password, $profile, $settings['options']['existing_og_subject'], $settings['options']['existing_og_message'], $settings['options']['existing_og_markup'], $settings['options']['existing_og_css'], $settings['options']['subscribed']);
+			}
+		}
+	} 
+	else {
+		foreach ($settings['options']['groups'] as $group_id => $selected) {
+			// subscribe to group
+			if (!empty($selected)) og_save_subscription($group_id, $account->uid, $og_args);	
+		}
+	
+	}  
+
+  return;
+}
+
+// get info of existing groups
+function user_import_og_get_groups() {
+
+	$node_types = node_get_types();
+	$groups = array();   
+
+	foreach ($node_types as $type) {
+		if (og_is_group_type($type->type)) {
+			$query_types[] = "n.type IN ('%s') ";
+			$arguments[] = $type->type;
+		}  
+	}
+
+	if (empty($arguments)) return array();
+
+	$query_types = implode('OR ', $query_types);
+	$query_types = "AND ($query_types) ";
+
+
+	$query = "SELECT n.nid, n.title, n.type FROM {node} n INNER JOIN {og} g ON n.nid = g.nid 
+	        WHERE n.status = 1 
+	        $query_types
+	        ORDER BY n.title";
+
+	$results = db_query($query, $arguments);           
+         
+	while ($group = db_fetch_object($results)) {
+		$groups[$group->nid] = $group->title .' ('. check_plain($group->type) .')';
+	}
+
+	return $groups;
+}
+
+
+// - - - - - - - -  FORMS - - - - - - - - 
+
+/**
+ *  form to present in block enabling users to be mass imported from a file
+ */
+function user_import_og_preconfigured(&$form_state, $og_id = NULL, $template_id = NULL) {
+
+    $form = array();
+    
+    $form['template_id'] = array(
+      '#type' => 'value', 
+      '#value' => $template_id,
+    );
+    
+    $form['og_id'] = array(
+      '#type' => 'value', 
+      '#value' => $og_id,
+    );
+    
+    $form['multiple'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Add Multiple Users'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,  
+        '#description' => t("Upload a CSV file."),
+    );
+    
+    if (function_exists('file_upload_max_size')) $file_size = t('Maximum file size: !size MB.', array('!size' => file_upload_max_size()));
+
+    $form['multiple']['browser']['file_upload'] = array(
+        '#type' => 'file',
+        '#title' => t('CSV File'),
+        '#size' => 13,
+        '#description' => $file_size,
+    );
+    
+    $form['multiple']['next'] = array(
+        '#type' => 'submit', 
+        '#value' => t('Upload')
+    );    
+    
+    // Set form parameters so we can accept file uploads.
+    $form['#attributes'] = array('enctype' => 'multipart/form-data');
+    
+    if (!empty($import_id)) {
+
+      // check access
+      $exists = db_result(db_query("SELECT COUNT(import_id) FROM {user_import} WHERE import_id = %d", $import_id));
+      
+      if (!empty($exists)) {
+
+        $form['status'] = array(
+            '#value' => '<div class="user-import-report">
+                          <h3>'. t('Import Report') .'</h3>'. 
+                          theme('user_import_og_limited_list', $import_id, $template_id) . 
+                          '</div>',
+        );
+      }
+    }
+
+    return $form;
+}
+
+function user_import_og_preconfigured_validate($form, &$form_state) {
+
+  // check file uploaded OK
+  $file = _user_import_file();
+  if (empty($file->filename)) form_set_error('file_upload', t('A valid file must be selected.'));
+}
+
+function user_import_og_preconfigured_submit($form, &$form_state) {
+
+  $file = _user_import_file();
+
+  $form_state['values']['filename'] = $file->filename;
+  $form_state['values']['oldfilename'] = $file->filename;
+  $form_state['values']['filepath'] = $file->filepath;
+  $form_state['values']['setting'] = 'file set';
+  
+  $import = _user_import_settings_save($form_state['values']);
+
+  // submit the form using these values
+  // $form_state['values']['form_id'] = 'user_import_edit_form';
+  // $field_values = array('$form_state['redirect'] = _path' => 'user_import/'. $form_state['values']['template_id'] .'/'. $import['import_id'] .'/'. $form_state['values']['og_id']);
+  // $field_values['og_id'] = $form_state['values']['og_id'];
+  // $errors = drupal_execute($form_state['values']['form_id'], $field_values, $import['import_id'], $form_state['values']['template_id']); 
+  
+	drupal_goto('og/user_import/' . $form_state['values']['og_id'] . '/' . $import['import_id']);
+}
+
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function user_import_og_form_alter(&$form, &$form_state, $form_id) {
+  
+  $type = $form['#node_type']->type;
+  
+  // add option to organic group node type(s) to use user import template
+  if ($form_id == 'node_type_form' && module_exists('og') && !empty($type) && og_is_group_type($type)) {
+
+    $templates = _user_import_settings_select(NULL, 'GET TEMPLATES');
+    if (empty($templates)) $help = t('Save a user import to create a template which will be available for selection here.');
+ 
+    $form['user_import'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('User Import'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#access' => user_access('administer user_import'),
+      '#description' => $help, 
+    );
+
+    // if (!empty($templates)) {
+    //   
+    //   $template_settings = variable_get('user_import_og_template', array());
+    //   $templates_list = array('-- none --');
+    //   $subscribe_feature = variable_get('user_import_og_subscribe', array());
+    //    
+    //   foreach ($templates as $template) {
+    //       $templates_list[$template['import_id']] = $template['name'];
+    //       $templates_delete[$template['import_id']] = $template['name'];
+    //   }
+    // 
+    //   $form['user_import']['user_import_og_template'] = array(
+    //     '#type' => 'select',
+    //     '#title' => t('Organic Groups Mass Import & Subscribe'),
+    //     '#description' => t('Admin(s) of each Organic Group will be able to mass import new and existing users into their group. Enable this feature by selecting a user import template.'),
+    //     '#options' => $templates_list,
+    //     '#default_value' => $template_settings[$type],
+    //   ); 
+    // } 
+    
+    $form['user_import']['user_import_og_subscribe'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Organic Groups Individual Subscribe'),
+      '#description' => t('Admin(s) of each Organic Group will be able to subscribe an existing user to an Organic Group.'),
+      '#default_value' => $subscribe_feature[$type],
+    );
+    
+    
+    $form['#submit'][] = 'user_import_og_content_type_submit';
+  }
+}
+
+
+// - - - - - - - -  MISC - - - - - - - -   
+
+/**
+ * Save options on content type configuration form
+ */
+function user_import_og_content_type_submit($form, &$form_state) {
+
+  // user import template for Organic Groups content type
+  $templates = variable_get('user_import_og_template', array());
+  $templates[$form_state['values']['type']] = $form_state['values']['user_import_og_template'];
+  variable_set('user_import_og_template', $templates);
+  
+  // setting to display option to subscribe an existing user to an Organic Group
+  $subscribe_feature = variable_get('user_import_og_subscribe', array());
+  $subscribe_feature[$form_state['values']['type']] = $form_state['values']['user_import_og_subscribe'];
+  variable_set('user_import_og_subscribe', $subscribe_feature);
+}
+
+
+/**
+ * Form for adding a single existing user. Displayed in block.
+ */
+function user_import_og_add_existing_user_form(&$form_state, $node) {
+
+  $form['gid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  ); 
+
+  $form['single'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Add One User'),
+    '#description' => t('Add an existing user to this project.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  
+
+  $form['single']['user'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User'),
+    '#autocomplete_path' => 'user/autocomplete',
+    '#size' => 25,
+    '#maxlength' => 128, 
+  );
+  
+  $form['single']['submit'] = array(
+    '#type' => 'submit', 
+    '#value' => t('Add User'),
+  ); 
+  
+  return $form;
+}
+
+function user_import_og_add_existing_user_form_submit($form, &$form_state) {
+
+  $uid = $form_state['values']['user'];
+  
+  if (isset($form_state['values']['user'])) {
+    $account = user_load(array('name' => $form_state['values']['user']));
+    $uid = $account->uid;
+  }
+  
+  og_save_subscription($form_state['values']['gid'], $uid, array('is_active' => 1));
+}
+
+
+/**
+ * Implementation of hook_user_import_form_update_user().
+ */
+function user_import_og_user_import_form_update_user() {
+	$form['user_import_og'] = array('title' => t('Organic Groups'), 'description' => t('Affected: Organic Groups membership.'));
+	return $form;
+} 
+
+
+/**
+ * 
+ */
+function user_import_og_multiple_import($og_id = NULL, $import_id = NULL) {
+  
+	if (empty($og_id) || empty($import_id)) {
+		drupal_access_denied();
+		return;
+	}
+
+	$form = drupal_get_form('user_import_edit_form', $import_id);
+
+	return $form; 
+}
+
+function user_import_og_multiple_import_validate($form, &$form_state) {
+
+  // check file uploaded OK
+  $file = _user_import_file();
+  if (empty($file->filename)) form_set_error('file_upload', t('A valid file must be selected.'));
+}
+
+function user_import_og_multiple_import_submit($form, &$form_state) {
+
+  $file = _user_import_file();
+
+  $form_state['values']['filename'] = $file->filename;
+  $form_state['values']['oldfilename'] = $file->filename;
+  $form_state['values']['filepath'] = $file->filepath;
+  $form_state['values']['setting'] = 'file set';
+  
+  $import = _user_import_settings_save($form_state['values']);
+
+  // submit the form using these values
+  $form_state['values']['form_id'] = 'user_import_edit_form';
+  $field_values = array('return_path' => 'user_import/' . $form_state['values']['template_id'] . '/' . $import['import_id'] . '/' . $form_state['values']['og_id']);
+  $field_values['og_id'] = $form_state['values']['og_id'];
+  $errors = drupal_execute($form_state['values']['form_id'], $field_values, $import['import_id'], $form_state['values']['template_id']);
+  return;
+}
+
+
+
+
+
+
+
+// - - - - - - - -  THEMES - - - - - - - - 
+
+
+function theme_user_import_og_limited_list($import_id, $template_id = NULL) {
+
+  $import = _user_import_settings_select($import_id);
+
+  if (!$import) return ' ';
+
+  // header labels
+  $import_label = ($import['setting'] == 'tested' || $import['setting'] == 'test') ? t('importable') : t('imported');
+  $header = array(t('file'), t('started'), t('processed'), $import_label, t('errors'), t('status'));
+              
+  // info row
+  $errors = db_result(db_query("SELECT COUNT(import_id) FROM {user_import_errors} WHERE import_id = %d", $import['import_id']));         
+  $errors_link = ($errors == 0) ? '0': l($errors, 'user_import/errors/'. $import_id .'/'. $template_id);           
+  
+  $rows[0] = array(
+      check_plain($import['oldfilename']),
+      format_date($import['started'], 'small'),
+      array("data" => $import['processed'], "align" => 'center'),
+      array("data" => $import['valid'], "align" => 'center'),
+      array("data" => $errors_link, "align" => 'center'),
+      $import['setting'],
+  );
+  
+  $output .= theme('table', $header, $rows);
+  
+  // action buttons
+  $delete_link = l(t('Remove Info'), 'user_import/delete/'. $import_id .'/'. $template_id);
+  $continue_link = l(t('Continue Processing'), 'user_import/continue/'. $import_id .'/'. $template_id);
+  $import_link = l(t('Import'), 'user_import/import/'. $import_id .'/'. $template_id);
+  
+  $output .= $delete_link;   
+  if ($import['setting'] == 'tested' || $import['setting'] == 'test') $output .= ' | '. $import_link;
+  if ($import['setting'] == 'test' || $import['setting']  == 'import') $output .= ' | '. $continue_link;
+
+  return $output;
+}
+
+
+/**
+ * Implementation of hook_simpletest().
+ */
+function user_import_og_simpletest() {
+  $module_name = 'user_import_og';
+  $dir = drupal_get_path('module', $module_name) .'/tests';
+  $tests = file_scan_directory($dir, '\.test$');
+  return array_keys($tests);
+}
+
+
+
+
+

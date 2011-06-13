@@ -1,0 +1,96 @@
+/* Use this stylesheet for print styles only */
+
+.sidebar, 
+#navigation, 
+#header-region, 
+#search-theme-form,
+#footer,
+#header,
+.alinks_title,
+.alinks,
+.breadcrumb,
+.tabs,
+.feed-icon,
+.links {
+	display: none;
+}
+
+.alinks_title,
+a.maplink,
+.alinks {
+  display: none;
+}
+
+fieldset { 
+  padding: 0;
+  margin: 0;
+}
+
+.node .title  {
+  padding: 20px 0 0 0;
+  margin: 0 0 0 0;
+}
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#main, #content, #content-inner, #content-area, div.node, div.node-inner {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: block;
+  float: none;
+}
+#page {
+	width: 100%;
+  margin:0;
+  max-width:100%;
+  width: 100%;
+}
+
+a.recordedit {
+  display: none;
+}
+
+* {
+	background-color: transparent;
+}
+
+#content,
+#content #content-inner,
+.content,
+.title {
+	margin:0px 0;
+	width: auto;
+}
+
+a:hover, a:active, a:link, a:visited {
+	color: #000;
+}
+
+.node.baptism .icon:before {
+  content: "Baptism";
+}
+.node.salvation .icon:before {
+  content: "Salvation";
+}
+.node.attendance .icon:before{
+  content: "Attendance";
+}
+.node.sundayschool .icon:before {
+  content: "A.B.C. enrolment";
+}
+.node.membership .icon:before {
+  content: "Membership";
+}
+.node.discipleship .icon:before {
+  content: "Discipleship";
+}
+
+.node .icon {
+  height: 25px;
+  width: 180px;
+  text-align: right;
+}
